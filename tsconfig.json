@@ -2,6 +2,8 @@
   "extends": "@tsconfig/bun/tsconfig.json",
   "compilerOptions": {
     "strict": true,
+    "ignoreDeprecations": "6.0",
+    "types": ["bun"],
     "baseUrl": "./",
     "paths": {
       "@application/*": ["src/api/application/*"],
