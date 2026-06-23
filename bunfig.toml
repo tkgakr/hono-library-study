@@ -1,0 +1,8 @@
+[build]
+[build.alias]
+"@application" = "./src/api/application"
+"@core" = "./src/api/core"
+"@domain" = "./src/api/domain"
+"@infrastructure" = "./src/api/infrastructure"
+"@interface" = "./src/api/interface"
+"@test" = "./src/test"

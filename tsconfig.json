@@ -1,0 +1,16 @@
+{
+  "extends": "@tsconfig/bun/tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "baseUrl": "./",
+    "paths": {
+      "@application/*": ["src/api/application/*"],
+      "@core/*": ["src/api/core/*"],
+      "@domain/*": ["src/api/domain/*"],
+      "@infrastructure/*": ["src/api/infrastructure/*"],
+      "@interface/*": ["src/api/interface/*"],
+      "@test/*": ["src/test/*"]
+    }
+  },
+  "include": ["src"]
+}
