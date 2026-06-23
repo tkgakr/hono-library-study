@@ -202,27 +202,28 @@ dist
 
 ## 6. Dockerfile.local
 
-debian に Bun を入れて動かす構成です。
+Bun 公式イメージを使って動かす構成です。
+`curl | bash` で実行時にインストーラを取得する形や、追加の `apt-get install` は避けます。
+イメージはバージョンと digest を固定し、ビルドの再現性を上げつつ、意図しないタグ更新の影響を抑えます。
+依存パッケージは `bun.lock` を使って固定し、Docker build では `--frozen-lockfile` で lockfile からずれたインストールを失敗させます。
 コードは compose の volume でマウントするため、`COPY` ＆ `bun install` は初回の依存解決用です。
 
 ```dockerfile
-# debian ベースで bun をインストールして実行
-FROM debian:bookworm-slim
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends bash curl unzip ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN curl -fsSL https://bun.com/install | bash -s -- bun-v1.3.12
-ENV BUN_INSTALL="/root/.bun"
-ENV PATH="${BUN_INSTALL}/bin:${PATH}"
+# Bun 公式イメージを digest 固定して実行
+FROM oven/bun:1.3.12-slim@sha256:d3c7094c144dd3975d183a4dbc4ec0a764223995bff73290d983edb47043a75f
 
 WORKDIR /app
-COPY package.json ./
-RUN bun install
+RUN chown bun:bun /app
+USER bun
+
+COPY --chown=bun:bun package.json bun.lock ./
+RUN bun install --frozen-lockfile
 
 CMD ["bun", "run", "dev"]
 ```
+
+> digest 固定はサプライチェーンリスクを下げる一方で、セキュリティ修正版への自動追従もしません。
+> Bun やベースイメージを更新する場合は、公式タグの digest を確認して Dockerfile とこの手順書を一緒に更新します。
 
 ---
 
