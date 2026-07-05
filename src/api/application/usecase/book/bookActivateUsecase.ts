@@ -13,11 +13,21 @@ export const bookActivateUsecase = async (
   logger: ILogger,
   bookId: string,
 ): Promise<Result<boolean, OperationResult>> => {
-  return ResultAsync.fromPromise(repository.fetchDetail(bookId), promiseErrorReturn(logger, ResultCodes.BOOK_FETCH_FAILED))
+  return ResultAsync.fromPromise(
+    repository.fetchDetail(bookId),
+    promiseErrorReturn(logger, ResultCodes.BOOK_FETCH_FAILED),
+  )
     .map((entity) => entity.value)
     .andThen(nullOrUndefinedCheck(ResultCodes.BOOK_NOT_FOUND))
-    .andThen((entity) => (entity.isActive ? err({ code: ResultCodes.BOOK_INVALID_STATE, args: { operation: '復元' } }) : ok(entity))) // 既に有効ならエラー
+    .andThen((entity) =>
+      entity.isActive ? err({ code: ResultCodes.BOOK_INVALID_STATE, args: { operation: '復元' } }) : ok(entity),
+    ) // 既に有効ならエラー
     .andThrough((entity) => checkBookTitleExists(repository, logger, entity.title, entity.id))
-    .andThen((entity) => ResultAsync.fromPromise(repository.save(activateBook(entity.id)), promiseErrorReturn(logger, ResultCodes.BOOK_SAVE_FAILED)))
+    .andThen((entity) =>
+      ResultAsync.fromPromise(
+        repository.save(activateBook(entity.id)),
+        promiseErrorReturn(logger, ResultCodes.BOOK_SAVE_FAILED),
+      ),
+    )
     .andThen(falsyValueCheck(ResultCodes.BOOK_SAVE_FAILED))
 }

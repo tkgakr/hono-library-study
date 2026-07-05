@@ -1,4 +1,7 @@
-import { validatedSearchConditionPagingSchema, validatedSearchConditionSortSchema } from '@domain/model/generic/searchCondition'
+import {
+  validatedSearchConditionPagingSchema,
+  validatedSearchConditionSortSchema,
+} from '@domain/model/generic/searchCondition'
 import z from 'zod'
 
 const validatedGetListBookParametersSchema = z.object({

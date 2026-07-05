@@ -18,10 +18,15 @@ export const bookUpdateUsecase = async (
   return ResultAsync.fromPromise(repository.fetchDetail(id), promiseErrorReturn(logger, ResultCodes.BOOK_FETCH_FAILED))
     .map((entity) => entity.value) // EntityData の殻を外す
     .andThen(nullOrUndefinedCheck(ResultCodes.BOOK_NOT_FOUND)) // 存在チェック
-    .andThrough((entity) => (entity.isActive ? ok(entity) : err({ code: ResultCodes.BOOK_INVALID_STATE, args: { operation: '更新' } }))) // 有効なものだけ更新可
+    .andThrough((entity) =>
+      entity.isActive ? ok(entity) : err({ code: ResultCodes.BOOK_INVALID_STATE, args: { operation: '更新' } }),
+    ) // 有効なものだけ更新可
     .andThrough((entity) => checkBookTitleExists(repository, logger, validatedEntity.title ?? '', entity.id)) // 自分以外との重複
     .andThen((entity) =>
-      ResultAsync.fromPromise(repository.save(updateBook(entity.id, validatedEntity)), promiseErrorReturn(logger, ResultCodes.BOOK_SAVE_FAILED)),
+      ResultAsync.fromPromise(
+        repository.save(updateBook(entity.id, validatedEntity)),
+        promiseErrorReturn(logger, ResultCodes.BOOK_SAVE_FAILED),
+      ),
     )
     .andThen(falsyValueCheck(ResultCodes.BOOK_SAVE_FAILED))
 }

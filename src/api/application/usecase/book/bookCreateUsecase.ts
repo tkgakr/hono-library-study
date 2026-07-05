@@ -15,14 +15,9 @@ export const bookCreateUsecase = async (
   validatedEntity: ValidatedCreateBook,
 ): Promise<Result<boolean, OperationResult>> => {
   return ok(createBook(validatedEntity)) // ドメイン関数で保存命令を作る
-    .asyncAndThrough((created) =>
-      checkBookTitleExists(repository, logger, created.title),
-    ) // 重複チェック（素通し）
+    .asyncAndThrough((created) => checkBookTitleExists(repository, logger, created.title)) // 重複チェック（素通し）
     .andThen((created) =>
-      ResultAsync.fromPromise(
-        repository.save(created),
-        promiseErrorReturn(logger, ResultCodes.BOOK_SAVE_FAILED),
-      ),
+      ResultAsync.fromPromise(repository.save(created), promiseErrorReturn(logger, ResultCodes.BOOK_SAVE_FAILED)),
     ) // 保存
     .andThen(falsyValueCheck(ResultCodes.BOOK_SAVE_FAILED)) // 保存結果が false なら失敗
 }

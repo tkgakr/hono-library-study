@@ -13,7 +13,8 @@ export const bookGetDetailUsecase = async (
   repository: IBookRepository,
   logger: ILogger,
 ): Promise<Result<EntityData<GetBook>, OperationResult>> => {
-  return ResultAsync.fromPromise(repository.fetchDetail(id), promiseErrorReturn(logger, ResultCodes.BOOK_FETCH_FAILED)).andThrough((entity) =>
-    nullOrUndefinedCheck(ResultCodes.BOOK_NOT_FOUND)(entity.value),
-  )
+  return ResultAsync.fromPromise(
+    repository.fetchDetail(id),
+    promiseErrorReturn(logger, ResultCodes.BOOK_FETCH_FAILED),
+  ).andThrough((entity) => nullOrUndefinedCheck(ResultCodes.BOOK_NOT_FOUND)(entity.value))
 }

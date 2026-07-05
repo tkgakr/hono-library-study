@@ -1,6 +1,9 @@
 import type { GetBook, SaveBook } from '@domain/model/book/book'
 import { bookSaveOperations, getBookSchema } from '@domain/model/book/book'
-import type { ValidatedGetListBookParameters, ValidatedGetListBookSearchConditions } from '@domain/model/book/bookSearchConditions'
+import type {
+  ValidatedGetListBookParameters,
+  ValidatedGetListBookSearchConditions,
+} from '@domain/model/book/bookSearchConditions'
 import type { EntityData, ListData } from '@domain/model/generic/repositoryData'
 import type { IBookRepository } from '@domain/repository/book/bookRepository'
 import { getDbInstance } from '@infrastructure/database/dbAccess'
@@ -17,7 +20,11 @@ import { and, count, eq, ilike, or } from 'drizzle-orm'
 const bookRepository: IBookRepository = {
   fetchList: async (searchConditions: ValidatedGetListBookSearchConditions): Promise<ListData<GetBook>> => {
     const db = getDbInstance()
-    let baseQuery = db.select(bookDTOSchema).from(bookTable).where(buildGetListWhereConditions(searchConditions.parameters)).$dynamic()
+    let baseQuery = db
+      .select(bookDTOSchema)
+      .from(bookTable)
+      .where(buildGetListWhereConditions(searchConditions.parameters))
+      .$dynamic()
     baseQuery = addOrderBy(baseQuery, searchConditions.sort, sortablePgColumnMap)
     baseQuery = addLimitOffset(baseQuery, searchConditions.paging)
     const bookDto = await baseQuery
