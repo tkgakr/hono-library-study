@@ -1,6 +1,14 @@
 import { swaggerUI } from '@hono/swagger-ui'
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
+import { loadEnv } from '@infrastructure/config/env'
+import { getDbInstance } from '@infrastructure/database/dbAccess'
+import { textLogger } from '@infrastructure/logger/logger'
+import { globalErrorHandler } from '@infrastructure/middleware/errorHandler'
+import { apiRouter } from '@interface/routerIndex'
 import { serve } from 'bun'
+
+const appConfig = loadEnv()
+getDbInstance() // 起動時に接続を初期化
 
 const app = new OpenAPIHono()
 
@@ -22,16 +30,16 @@ const healthRoute = createRoute({
 
 app.openapi(healthRoute, (c) => c.json({ status: 'ok' as const }))
 
-// --- OpenAPI ドキュメント (/json) と Swagger UI (/api-docs) ---
+app.route('/', apiRouter)
+// --- OpenAPI ドキュメント (/json)
 app.doc('/json', {
   openapi: '3.1.0',
-  info: { version: '1.0.0', title: '図書館システムAPI' },
+  info: { version: '1.0.0', title: '図書館システム学習API' },
 })
+// --- Swagger UI (/api-docs)
 app.get('/api-docs', swaggerUI({ url: '/json' }))
 
-const server = serve({
-  fetch: app.fetch,
-  port: Number(process.env.PORT ?? 3000),
-})
+app.onError(globalErrorHandler) // 例外を統一形式へ
 
-console.log(`PORT ${server.port} で起動しました`)
+const server = serve({ fetch: app.fetch, port: appConfig.system.port })
+textLogger.info(`PORT ${server.port} で起動しました`)
