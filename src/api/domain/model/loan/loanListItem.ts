@@ -1,5 +1,5 @@
-import { z } from 'zod'
 import { loanStatuses } from '@domain/model/loan/loan'
+import { z } from 'zod'
 
 // 一覧の1行 (join 済みの集約ビュー)
 export const loanListItemSchema = z
