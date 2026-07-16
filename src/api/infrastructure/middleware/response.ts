@@ -24,6 +24,19 @@ export const APIResultValue: Record<ResultCode, ResponseMessageDefinition> = {
   [ResultCodes.BOOK_FETCH_FAILED]: { message: () => '蔵書の取得に失敗しました', httpStatusCode: 500 },
   [ResultCodes.BOOK_SAVE_FAILED]: { message: () => '蔵書の保存に失敗しました', httpStatusCode: 500 },
   [ResultCodes.BOOK_DUPLICATE_CHECK_FAILED]: { message: () => '蔵書の取得に失敗しました', httpStatusCode: 500 },
+  [ResultCodes.MEMBER_NOT_FOUND]: { message: () => '指定された利用者は存在しません', httpStatusCode: 404 },
+  [ResultCodes.MEMBER_INVALID_STATE]: {
+    message: (a) => `${a?.operation}可能な利用者がありません`,
+    httpStatusCode: 404,
+  },
+  [ResultCodes.MEMBER_ALREADY_EXISTS]: {
+    message: () => '同じメールアドレスの利用者が既に存在します',
+    httpStatusCode: 400,
+  },
+  [ResultCodes.MEMBER_LIST_FAILED]: { message: () => '利用者の一覧取得に失敗しました', httpStatusCode: 500 },
+  [ResultCodes.MEMBER_FETCH_FAILED]: { message: () => '利用者の取得に失敗しました', httpStatusCode: 500 },
+  [ResultCodes.MEMBER_SAVE_FAILED]: { message: () => '利用者の保存に失敗しました', httpStatusCode: 500 },
+  [ResultCodes.MEMBER_DUPLICATE_CHECK_FAILED]: { message: () => '利用者の取得に失敗しました', httpStatusCode: 500 },
   [ResultCodes.INTERNAL_ERROR]: { message: () => '内部エラーが発生しました', httpStatusCode: 500 },
 }
 
