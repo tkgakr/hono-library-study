@@ -5,7 +5,7 @@ import {
 import z from 'zod'
 
 const validatedGetListMemberParametersSchema = z.object({
-  name: z.string().optional(),
+  email: z.string().optional(),
   searchFilter: z.string().optional(),
   isActive: z.boolean().optional(),
 })
