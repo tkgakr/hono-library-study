@@ -98,11 +98,11 @@ export const checkBookTitleExists = (
   // タイトル未指定（空白）なら何もチェックしない
   return isEmptyOrWhitespaceString(title)
     ? okAsync()
-    : ResultAsync.fromPromise(repository.findByTitle(title), promiseErrorReturn(logger, ResultCodes.E0104)).andThen((result) =>
+    : ResultAsync.fromPromise(repository.findByTitle(title), promiseErrorReturn(logger, ResultCodes.BOOK_DUPLICATE_CHECK_FAILED)).andThen((result) =>
         // 更新/復元では自分自身を除外して判定
         isEmptyArray(excludeId ? result.value.filter((item) => item.id !== excludeId) : result.value)
           ? okAsync()
-          : err({ code: ResultCodes.W0103 }),
+          : err({ code: ResultCodes.BOOK_ALREADY_EXISTS }),
       )
 }
 ```
@@ -133,8 +133,8 @@ export const bookCreateUsecase = async (
 ): Promise<Result<boolean, OperationResult>> => {
   return ok(createBook(validatedEntity)) // ドメイン関数で保存命令を作る
     .asyncAndThrough((created) => checkBookTitleExists(repository, logger, created.title)) // 重複チェック（素通し）
-    .andThen((created) => ResultAsync.fromPromise(repository.save(created), promiseErrorReturn(logger, ResultCodes.E0103))) // 保存
-    .andThen(falsyValueCheck(ResultCodes.E0103)) // 保存結果が false なら失敗
+    .andThen((created) => ResultAsync.fromPromise(repository.save(created), promiseErrorReturn(logger, ResultCodes.BOOK_SAVE_FAILED))) // 保存
+    .andThen(falsyValueCheck(ResultCodes.BOOK_SAVE_FAILED)) // 保存結果が false なら失敗
 }
 ```
 
@@ -164,7 +164,7 @@ export const bookGetListUsecase = async (
   searchConditions: ValidatedGetListBookSearchConditions,
   logger: ILogger,
 ): Promise<Result<ListData<GetBook>, OperationResult>> => {
-  return ResultAsync.fromPromise(repository.fetchList(searchConditions), promiseErrorReturn(logger, ResultCodes.E0101))
+  return ResultAsync.fromPromise(repository.fetchList(searchConditions), promiseErrorReturn(logger, ResultCodes.BOOK_LIST_FAILED))
 }
 ```
 
@@ -191,8 +191,8 @@ export const bookGetDetailUsecase = async (
   repository: IBookRepository,
   logger: ILogger,
 ): Promise<Result<EntityData<GetBook>, OperationResult>> => {
-  return ResultAsync.fromPromise(repository.fetchDetail(id), promiseErrorReturn(logger, ResultCodes.E0102)).andThrough((entity) =>
-    nullOrUndefinedCheck(ResultCodes.W0101)(entity.value),
+  return ResultAsync.fromPromise(repository.fetchDetail(id), promiseErrorReturn(logger, ResultCodes.BOOK_FETCH_FAILED)).andThrough((entity) =>
+    nullOrUndefinedCheck(ResultCodes.BOOK_NOT_FOUND)(entity.value),
   )
 }
 ```
@@ -224,13 +224,13 @@ export const bookUpdateUsecase = async (
   id: string,
   validatedEntity: ValidatedUpdateBook,
 ): Promise<Result<boolean, OperationResult>> => {
-  return ResultAsync.fromPromise(repository.fetchDetail(id), promiseErrorReturn(logger, ResultCodes.E0102))
+  return ResultAsync.fromPromise(repository.fetchDetail(id), promiseErrorReturn(logger, ResultCodes.BOOK_FETCH_FAILED))
     .map((entity) => entity.value) // EntityData の殻を外す
-    .andThen(nullOrUndefinedCheck(ResultCodes.W0101)) // 存在チェック
-    .andThrough((entity) => (entity.isActive ? ok(entity) : err({ code: ResultCodes.W0102, args: { operation: '更新' } }))) // 有効なものだけ更新可
+    .andThen(nullOrUndefinedCheck(ResultCodes.BOOK_NOT_FOUND)) // 存在チェック
+    .andThrough((entity) => (entity.isActive ? ok(entity) : err({ code: ResultCodes.BOOK_INVALID_STATE, args: { operation: '更新' } }))) // 有効なものだけ更新可
     .andThrough((entity) => checkBookTitleExists(repository, logger, validatedEntity.title ?? '', entity.id)) // 自分以外との重複
-    .andThen((entity) => ResultAsync.fromPromise(repository.save(updateBook(entity.id, validatedEntity)), promiseErrorReturn(logger, ResultCodes.E0103)))
-    .andThen(falsyValueCheck(ResultCodes.E0103))
+    .andThen((entity) => ResultAsync.fromPromise(repository.save(updateBook(entity.id, validatedEntity)), promiseErrorReturn(logger, ResultCodes.BOOK_SAVE_FAILED)))
+    .andThen(falsyValueCheck(ResultCodes.BOOK_SAVE_FAILED))
 }
 ```
 
@@ -262,13 +262,13 @@ export const bookActivateUsecase = async (
   logger: ILogger,
   bookId: string,
 ): Promise<Result<boolean, OperationResult>> => {
-  return ResultAsync.fromPromise(repository.fetchDetail(bookId), promiseErrorReturn(logger, ResultCodes.E0102))
+  return ResultAsync.fromPromise(repository.fetchDetail(bookId), promiseErrorReturn(logger, ResultCodes.BOOK_FETCH_FAILED))
     .map((entity) => entity.value)
-    .andThen(nullOrUndefinedCheck(ResultCodes.W0101))
-    .andThen((entity) => (entity.isActive ? err({ code: ResultCodes.W0102, args: { operation: '復元' } }) : ok(entity))) // 既に有効ならエラー
+    .andThen(nullOrUndefinedCheck(ResultCodes.BOOK_NOT_FOUND))
+    .andThen((entity) => (entity.isActive ? err({ code: ResultCodes.BOOK_INVALID_STATE, args: { operation: '復元' } }) : ok(entity))) // 既に有効ならエラー
     .andThrough((entity) => checkBookTitleExists(repository, logger, entity.title, entity.id))
-    .andThen((entity) => ResultAsync.fromPromise(repository.save(activateBook(entity.id)), promiseErrorReturn(logger, ResultCodes.E0103)))
-    .andThen(falsyValueCheck(ResultCodes.E0103))
+    .andThen((entity) => ResultAsync.fromPromise(repository.save(activateBook(entity.id)), promiseErrorReturn(logger, ResultCodes.BOOK_SAVE_FAILED)))
+    .andThen(falsyValueCheck(ResultCodes.BOOK_SAVE_FAILED))
 }
 ```
 
@@ -292,11 +292,11 @@ export const bookInactivateUsecase = async (
   logger: ILogger,
   bookId: string,
 ): Promise<Result<boolean, OperationResult>> => {
-  return ResultAsync.fromPromise(repository.fetchDetail(bookId), promiseErrorReturn(logger, ResultCodes.E0102))
+  return ResultAsync.fromPromise(repository.fetchDetail(bookId), promiseErrorReturn(logger, ResultCodes.BOOK_FETCH_FAILED))
     .map((entity) => entity.value)
-    .andThen(nullOrUndefinedCheck(ResultCodes.W0101))
-    .andThen((entity) => ResultAsync.fromPromise(repository.save(inactivateBook(entity.id)), promiseErrorReturn(logger, ResultCodes.E0103)))
-    .andThen(falsyValueCheck(ResultCodes.E0103))
+    .andThen(nullOrUndefinedCheck(ResultCodes.BOOK_NOT_FOUND))
+    .andThen((entity) => ResultAsync.fromPromise(repository.save(inactivateBook(entity.id)), promiseErrorReturn(logger, ResultCodes.BOOK_SAVE_FAILED)))
+    .andThen(falsyValueCheck(ResultCodes.BOOK_SAVE_FAILED))
 }
 ```
 

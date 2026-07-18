@@ -60,17 +60,17 @@ interface ResponseMessageDefinition {
 
 // 結果コードごとに「メッセージ + HTTPステータス」を定義（網羅）
 export const APIResultValue: Record<ResultCode, ResponseMessageDefinition> = {
-  [ResultCodes.I0000]: { message: () => '正常に処理されました', httpStatusCode: 200 },
-  [ResultCodes.W9900]: { message: () => 'リクエストの形式が不正です', httpStatusCode: 400 },
-  [ResultCodes.W9901]: { message: (a) => `リクエストパラメータが不正です（${a?.invalidParameters}）`, httpStatusCode: 400 },
-  [ResultCodes.W0101]: { message: () => '指定された蔵書は存在しません', httpStatusCode: 404 },
-  [ResultCodes.W0102]: { message: (a) => `${a?.operation}可能な蔵書がありません`, httpStatusCode: 404 },
-  [ResultCodes.W0103]: { message: () => '同じタイトルの蔵書が既に存在します', httpStatusCode: 400 },
-  [ResultCodes.E0101]: { message: () => '蔵書の一覧取得に失敗しました', httpStatusCode: 500 },
-  [ResultCodes.E0102]: { message: () => '蔵書の取得に失敗しました', httpStatusCode: 500 },
-  [ResultCodes.E0103]: { message: () => '蔵書の保存に失敗しました', httpStatusCode: 500 },
-  [ResultCodes.E0104]: { message: () => '蔵書の取得に失敗しました', httpStatusCode: 500 },
-  [ResultCodes.E9999]: { message: () => '内部エラーが発生しました', httpStatusCode: 500 },
+  [ResultCodes.SUCCESS]: { message: () => '正常に処理されました', httpStatusCode: 200 },
+  [ResultCodes.INVALID_REQUEST_FORMAT]: { message: () => 'リクエストの形式が不正です', httpStatusCode: 400 },
+  [ResultCodes.VALIDATION_FAILED]: { message: (a) => `リクエストパラメータが不正です（${a?.invalidParameters}）`, httpStatusCode: 400 },
+  [ResultCodes.BOOK_NOT_FOUND]: { message: () => '指定された蔵書は存在しません', httpStatusCode: 404 },
+  [ResultCodes.BOOK_INVALID_STATE]: { message: (a) => `${a?.operation}可能な蔵書がありません`, httpStatusCode: 404 },
+  [ResultCodes.BOOK_ALREADY_EXISTS]: { message: () => '同じタイトルの蔵書が既に存在します', httpStatusCode: 400 },
+  [ResultCodes.BOOK_LIST_FAILED]: { message: () => '蔵書の一覧取得に失敗しました', httpStatusCode: 500 },
+  [ResultCodes.BOOK_FETCH_FAILED]: { message: () => '蔵書の取得に失敗しました', httpStatusCode: 500 },
+  [ResultCodes.BOOK_SAVE_FAILED]: { message: () => '蔵書の保存に失敗しました', httpStatusCode: 500 },
+  [ResultCodes.BOOK_DUPLICATE_CHECK_FAILED]: { message: () => '蔵書の取得に失敗しました', httpStatusCode: 500 },
+  [ResultCodes.INTERNAL_ERROR]: { message: () => '内部エラーが発生しました', httpStatusCode: 500 },
 }
 
 export const setResponse = <T>(context: Context, operationResult: OperationResult, data?: EntityData<T> | ListData<T>): Response => {
@@ -106,15 +106,15 @@ import z from 'zod'
 
 export const globalErrorHandler = (err: Error, c: Context): Response => {
   if (err instanceof z.ZodError) {
-    return setResponse(c, { code: ResultCodes.W9901, args: { invalidParameters: getZodErrorPathStrings(err) } })
+    return setResponse(c, { code: ResultCodes.VALIDATION_FAILED, args: { invalidParameters: getZodErrorPathStrings(err) } })
   }
   if (err.message === 'Malformed JSON in request body') {
-    return setResponse(c, { code: ResultCodes.W9900 })
+    return setResponse(c, { code: ResultCodes.INVALID_REQUEST_FORMAT })
   }
   if (err instanceof HTTPException) {
     return err.getResponse()
   }
-  return setResponse(c, { code: ResultCodes.E9999 })
+  return setResponse(c, { code: ResultCodes.INTERNAL_ERROR })
 }
 
 // ZodError から「どの項目が不正か」を文字列化する
@@ -138,7 +138,7 @@ export const createOpenApiHono = <E extends Env = Env>() =>
   new OpenAPIHono<E>({
     defaultHook: (result, c) => {
       if (!result.success) {
-        return setResponse(c, { code: ResultCodes.W9901, args: { invalidParameters: getZodErrorPathStrings(result.error) } })
+        return setResponse(c, { code: ResultCodes.VALIDATION_FAILED, args: { invalidParameters: getZodErrorPathStrings(result.error) } })
       }
     },
   })
@@ -408,7 +408,7 @@ const getListBookRoute = createRoute({
 bookRoute.openapi(getListBookRoute, async (c) => {
   const searchCondition = validateGetListBookUrlQuery(c.req.valid('query'))
   const result = await bookGetListUsecase(bookRepository, searchCondition, textLogger)
-  return result.isOk() ? setResponse(c, { code: ResultCodes.I0000 }, result.value) : setResponse(c, result.error)
+  return result.isOk() ? setResponse(c, { code: ResultCodes.SUCCESS }, result.value) : setResponse(c, result.error)
 })
 
 // --- 詳細取得 GET /books/{id} ---
@@ -428,7 +428,7 @@ const getDetailBookRoute = createRoute({
 })
 bookRoute.openapi(getDetailBookRoute, async (c) => {
   const result = await bookGetDetailUsecase(c.req.valid('param').id, bookRepository, textLogger)
-  return result.isOk() ? setResponse(c, { code: ResultCodes.I0000 }, result.value) : setResponse(c, result.error)
+  return result.isOk() ? setResponse(c, { code: ResultCodes.SUCCESS }, result.value) : setResponse(c, result.error)
 })
 
 // --- 作成 POST /books ---
@@ -448,7 +448,7 @@ const createBookRoute = createRoute({
 bookRoute.openapi(createBookRoute, async (c) => {
   const validatedRequest = validateCreateBook(c.req.valid('json'))
   const result = await bookCreateUsecase(bookRepository, textLogger, validatedRequest)
-  return result.isOk() ? setResponse(c, { code: ResultCodes.I0000 }) : setResponse(c, result.error)
+  return result.isOk() ? setResponse(c, { code: ResultCodes.SUCCESS }) : setResponse(c, result.error)
 })
 
 // --- 更新 PUT /books/{id} ---
@@ -469,7 +469,7 @@ const updateBookRoute = createRoute({
 bookRoute.openapi(updateBookRoute, async (c) => {
   const validatedRequest = validateUpdateBook(c.req.valid('json'))
   const result = await bookUpdateUsecase(bookRepository, textLogger, c.req.valid('param').id, validatedRequest)
-  return result.isOk() ? setResponse(c, { code: ResultCodes.I0000 }) : setResponse(c, result.error)
+  return result.isOk() ? setResponse(c, { code: ResultCodes.SUCCESS }) : setResponse(c, result.error)
 })
 
 // --- 無効化（論理削除）DELETE /books/{id} ---
@@ -486,7 +486,7 @@ const inactivateBookRoute = createRoute({
 })
 bookRoute.openapi(inactivateBookRoute, async (c) => {
   const result = await bookInactivateUsecase(bookRepository, textLogger, c.req.valid('param').id)
-  return result.isOk() ? setResponse(c, { code: ResultCodes.I0000 }) : setResponse(c, result.error)
+  return result.isOk() ? setResponse(c, { code: ResultCodes.SUCCESS }) : setResponse(c, result.error)
 })
 
 // --- 復元 PUT /books/activate/{id} ---
@@ -503,7 +503,7 @@ const activateBookRoute = createRoute({
 })
 bookRoute.openapi(activateBookRoute, async (c) => {
   const result = await bookActivateUsecase(bookRepository, textLogger, c.req.valid('param').id)
-  return result.isOk() ? setResponse(c, { code: ResultCodes.I0000 }) : setResponse(c, result.error)
+  return result.isOk() ? setResponse(c, { code: ResultCodes.SUCCESS }) : setResponse(c, result.error)
 })
 ```
 
@@ -513,7 +513,7 @@ bookRoute.openapi(activateBookRoute, async (c) => {
 1. c.req.valid('query'|'param'|'json') で検証済み入力を取り出す
 2. interface の validate...() で domain の型へ変換（必要な操作のみ）
 3. usecase(repository, logger, ...) を呼ぶ
-4. result.isOk() で分岐し setResponse(c, {code:I0000}, データ) / setResponse(c, result.error)
+4. result.isOk() で分岐し setResponse(c, {code: ResultCodes.SUCCESS}, データ) / setResponse(c, result.error)
 ```
 
 ---
