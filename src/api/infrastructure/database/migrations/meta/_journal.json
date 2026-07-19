@@ -8,6 +8,20 @@
       "when": 1782913211256,
       "tag": "0000_create_book",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784443756018,
+      "tag": "0001_create_member",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784443766030,
+      "tag": "0002_create_loan",
+      "breakpoints": true
     }
   ]
 }
