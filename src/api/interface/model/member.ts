@@ -39,3 +39,15 @@ export const validateGetListMemberUrlQuery = (
     paging: convertSearchConditionPagingUrlQueryToParameters(query),
     sort: convertSearchConditionSortUrlQueryToParameters(query, sortableColumnMap, defaultSort),
   })
+
+// --- 作成 ---
+export const unValidatedCreateMemberSchema = z
+  .object({
+    name: z.string().min(1).openapi({ description: '氏名', example: '山田太郎' }),
+    email: z.string().min(1).openapi({ description: 'メールアドレス', example: 'hoge@example.com' }),
+  })
+  .brand<'UnValidatedCreateMember'>()
+export type UnValidatedCreateMember = z.infer<typeof unValidatedCreateMemberSchema>
+
+export const validateCreateMember = (request: UnValidatedCreateMember): ValidatedCreateMember =>
+  validatedCreateMemberSchema.parse(request)
