@@ -28,5 +28,14 @@ export const unValidatedGetListMemberUrlQuerySchema = z
   .brand<'UnvalidatedGetListMemberUrlQuery'>()
 export type UnValidatedGetListMemberUrlQuery = z.infer<typeof unValidatedGetListMemberUrlQuerySchema>
 
-const sortableClumnMap: SortableColumnMap = { name: 'name', email: 'email' }
+const sortableColumnMap: SortableColumnMap = { name: 'name', email: 'email' }
 const defaultSort: DefaultSortItem[] = [{ column: 'created_at', order: 'asc' }]
+
+export const validateGetListMemberUrlQuery = (
+  query: UnValidatedGetListMemberUrlQuery,
+): ValidatedGetListMemberSearchConditions =>
+  validatedGetListMemberSearchConditionsSchema.parse({
+    parameters: { name: query.email, searchFilter: query['search-filter'], isActive: query['is-active'] },
+    paging: convertSearchConditionPagingUrlQueryToParameters(query),
+    sort: convertSearchConditionSortUrlQueryToParameters(query, sortableColumnMap, defaultSort),
+  })
