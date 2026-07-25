@@ -24,7 +24,7 @@ export const unValidatedGetListMemberUrlQuerySchema = z
   })
   .extend(unValidatedSearchConditionPagingUrlQuerySchema.shape)
   .extend(unValidatedSearchConditionSortUrlQuerySchema.shape)
-  .brand<'UnvalidatedGetListMemberUrlQuery'>()
+  .brand<'UnValidatedGetListMemberUrlQuery'>()
 export type UnValidatedGetListMemberUrlQuery = z.infer<typeof unValidatedGetListMemberUrlQuerySchema>
 
 const sortableColumnMap: SortableColumnMap = { name: 'name', email: 'email' }
@@ -34,7 +34,7 @@ export const validateGetListMemberUrlQuery = (
   query: UnValidatedGetListMemberUrlQuery,
 ): ValidatedGetListMemberSearchConditions =>
   validatedGetListMemberSearchConditionsSchema.parse({
-    parameters: { name: query.email, searchFilter: query['search-filter'], isActive: query['is-active'] },
+    parameters: { email: query.email, searchFilter: query['search-filter'], isActive: query['is-active'] },
     paging: convertSearchConditionPagingUrlQueryToParameters(query),
     sort: convertSearchConditionSortUrlQueryToParameters(query, sortableColumnMap, defaultSort),
   })
