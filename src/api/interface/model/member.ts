@@ -10,7 +10,6 @@ import {
   unValidatedSearchConditionPagingUrlQuerySchema,
   unValidatedSearchConditionSortUrlQuerySchema,
 } from '@interface/model/generic'
-import { UnValidatedGetListBookUrlQuery } from './book'
 
 // --- 一覧取得の URL クエリ ---
 export const unValidatedGetListMemberUrlQuerySchema = z
@@ -51,3 +50,15 @@ export type UnValidatedCreateMember = z.infer<typeof unValidatedCreateMemberSche
 
 export const validateCreateMember = (request: UnValidatedCreateMember): ValidatedCreateMember =>
   validatedCreateMemberSchema.parse(request)
+
+// --- 更新 ---
+export const unValidatedUpdateMemberSchema = z
+  .object({
+    name: z.string().min(1).optional().openapi({ description: '氏名', example: '山田太郎' }),
+    email: z.string().min(1).optional().openapi({ description: 'メールアドレス', example: 'hoge@example.com' }),
+  })
+  .brand<'UnValidatedUpdateMember'>()
+export type UnValidatedUpdateMember = z.infer<typeof unValidatedUpdateMemberSchema>
+
+export const validateUpdateMember = (request: UnValidatedUpdateMember): ValidatedUpdateMember =>
+  validatedUpdateMemberSchema.parse(request)
