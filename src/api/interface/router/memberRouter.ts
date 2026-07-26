@@ -23,3 +23,24 @@ import {
 import { genericResponse, idRequestParams, resultExamples } from '@interface/router/genericRouter'
 
 export const memberRoute = createOpenApiHono()
+
+// --- 一覧取得 GET /member ---
+const getListMemberRoute = createRoute({
+  path: '/',
+  method: 'get',
+  description: '利用者一覧取得',
+  tags: ['利用者'],
+  request: { query: unValidatedGetListMemberUrlQuerySchema },
+  responses: {
+    ...genericResponse,
+    [httpStatusCodes.OK]: {
+      content: { 'application/json': { schema: listResultSchema(getMemberSchema) } },
+      description: '利用者一覧取得成功',
+    },
+  },
+})
+memberRoute.openapi(getListMemberRoute, async (c) => {
+  const searchCondition = validateGetListMemberUrlQuery(c.req.valid('query'))
+  const result = await memberGetListUsecase(memberRepository, searchCondition, textLogger)
+  return result.isOk() ? setResponse(c, { code: ResultCodes.SUCCESS }, result.value) : setResponse(c, result.error)
+})
