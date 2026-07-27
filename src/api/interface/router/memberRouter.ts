@@ -65,3 +65,26 @@ memberRoute.openapi(getDetailMemberRoute, async (c) => {
   const result = await memberGetDetailUsecase(c.req.valid('param').id, memberRepository, textLogger)
   return result.isOk() ? setResponse(c, { code: ResultCodes.SUCCESS }, result.value) : setResponse(c, result.error)
 })
+
+// --- 作成 POST /members ---
+const createMemberRoute = createRoute({
+  path: '/',
+  method: 'post',
+  description: '利用者作成',
+  tags: ['利用者'],
+  request: {
+    body: { required: true, content: { 'application/json': { schema: unValidatedCreateMemberSchema } } },
+  },
+  responses: {
+    ...genericResponse,
+    [httpStatusCodes.OK]: {
+      content: { 'application/json': { schema: statusResultSchema, example: resultExamples.status } },
+      description: '利用者作成成功',
+    },
+  },
+})
+memberRoute.openapi(createMemberRoute, async (c) => {
+  const validatedRequest = validateCreateMember(c.req.valid('json'))
+  const result = await memberCreateUsecase(memberRepository, textLogger, validatedRequest)
+  return result.isOk() ? setResponse(c, { code: ResultCodes.SUCCESS }) : setResponse(c, result.error)
+})
