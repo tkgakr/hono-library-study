@@ -21,10 +21,11 @@ import {
   validateUpdateMember,
 } from '@interface/model/member'
 import { genericResponse, idRequestParams, resultExamples } from '@interface/router/genericRouter'
+import { desc } from 'drizzle-orm'
 
 export const memberRoute = createOpenApiHono()
 
-// --- 一覧取得 GET /member ---
+// --- 一覧取得 GET /members ---
 const getListMemberRoute = createRoute({
   path: '/',
   method: 'get',
@@ -42,5 +43,25 @@ const getListMemberRoute = createRoute({
 memberRoute.openapi(getListMemberRoute, async (c) => {
   const searchCondition = validateGetListMemberUrlQuery(c.req.valid('query'))
   const result = await memberGetListUsecase(memberRepository, searchCondition, textLogger)
+  return result.isOk() ? setResponse(c, { code: ResultCodes.SUCCESS }, result.value) : setResponse(c, result.error)
+})
+
+// --- 詳細取得 GET /members/{id} ---
+const getDetailMemberRoute = createRoute({
+  path: '/{id}',
+  method: 'get',
+  description: '利用者詳細取得',
+  tags: ['利用者'],
+  request: { params: idRequestParams },
+  responses: {
+    ...genericResponse,
+    [httpStatusCodes.OK]: {
+      content: { 'application/json': { schema: entityResultSchema(getMemberSchema) } },
+      description: '利用者詳細取得成功',
+    },
+  },
+})
+memberRoute.openapi(getDetailMemberRoute, async (c) => {
+  const result = await memberGetDetailUsecase(c.req.valid('param').id, memberRepository, textLogger)
   return result.isOk() ? setResponse(c, { code: ResultCodes.SUCCESS }, result.value) : setResponse(c, result.error)
 })
