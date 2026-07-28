@@ -112,3 +112,23 @@ memberRoute.openapi(updateMemberRoute, async (c) => {
   const result = await memberUpdateUsecase(memberRepository, textLogger, c.req.valid('param').id, validatedRequest)
   return result.isOk() ? setResponse(c, { code: ResultCodes.SUCCESS }) : setResponse(c, result.error)
 })
+
+// --- 無効化（論理削除）DELETE /members/{id} ---
+const inactivateMemberRoute = createRoute({
+  path: '/{id}',
+  method: 'delete',
+  description: '利用者削除',
+  tags: ['利用者'],
+  request: { params: idRequestParams },
+  responses: {
+    ...genericResponse,
+    [httpStatusCodes.OK]: {
+      content: { 'application/json': { schema: statusResultSchema, example: resultExamples.status } },
+      description: '利用者削除成功',
+    },
+  },
+})
+memberRoute.openapi(inactivateMemberRoute, async (c) => {
+  const result = await memberInactivateUsecase(memberRepository, textLogger, c.req.valid('param').id)
+  return result.isOk() ? setResponse(c, { code: ResultCodes.SUCCESS }) : setResponse(c, result.error)
+})
