@@ -21,7 +21,6 @@ import {
   validateUpdateMember,
 } from '@interface/model/member'
 import { genericResponse, idRequestParams, resultExamples } from '@interface/router/genericRouter'
-import { desc } from 'drizzle-orm'
 
 export const memberRoute = createOpenApiHono()
 
@@ -130,5 +129,25 @@ const inactivateMemberRoute = createRoute({
 })
 memberRoute.openapi(inactivateMemberRoute, async (c) => {
   const result = await memberInactivateUsecase(memberRepository, textLogger, c.req.valid('param').id)
+  return result.isOk() ? setResponse(c, { code: ResultCodes.SUCCESS }) : setResponse(c, result.error)
+})
+
+// --- 復元 PUT /members/activate/{id} ---
+const activateMemberRoute = createRoute({
+  path: '/activate/{id}',
+  method: 'put',
+  description: '利用者復元',
+  tags: ['利用者'],
+  request: { params: idRequestParams },
+  responses: {
+    ...genericResponse,
+    [httpStatusCodes.OK]: {
+      content: { 'application/json': { schema: statusResultSchema, example: resultExamples.status } },
+      description: '利用者復元成功',
+    },
+  },
+})
+memberRoute.openapi(activateMemberRoute, async (c) => {
+  const result = await memberActivateUsecase(memberRepository, textLogger, c.req.valid('param').id)
   return result.isOk() ? setResponse(c, { code: ResultCodes.SUCCESS }) : setResponse(c, result.error)
 })
