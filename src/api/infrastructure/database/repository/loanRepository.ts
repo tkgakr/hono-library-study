@@ -10,7 +10,7 @@ import bookTable from '@infrastructure/database/model/book/book'
 import loanTable, { createLoanParsedSchema, loanDTOSchema } from '@infrastructure/database/model/loan/loan'
 import memberTable from '@infrastructure/database/model/member/member'
 import { executeTransaction } from '@infrastructure/database/repository/genericRepository'
-import { eq } from 'drizzle-orm'
+import { and, eq, isNull } from 'drizzle-orm'
 
 const loanRepository: ILoanRepository = {
   fetchListWithRelations: async (): Promise<ListData<LoanListItem>> => {
@@ -69,10 +69,11 @@ const loanRepository: ILoanRepository = {
         return result.length > 0
       }
 
+      // 返却は未返却の行だけを対象にする（二重返却を DB 側で弾き、更新0件 = false になる）
       const result = await trx
         .update(loanTable)
         .set(createLoanParsedSchema.returnSchema(command))
-        .where(eq(loanTable.id, command.id))
+        .where(and(eq(loanTable.id, command.id), isNull(loanTable.returnedOn)))
         .returning()
       return result.length > 0
     })
