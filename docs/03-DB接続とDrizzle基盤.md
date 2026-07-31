@@ -172,7 +172,10 @@ import { boolean, timestamp, uuid } from 'drizzle-orm/pg-core'
 export const primaryId = uuid().primaryKey()
 const isActive = boolean().notNull().default(true)
 export const createdAt = timestamp({ withTimezone: true }).notNull().defaultNow()
-export const updatedAt = timestamp({ withTimezone: true })
+// PostgreSQL には MySQL の ON UPDATE CURRENT_TIMESTAMP がなく、DEFAULT は INSERT 時しか効かない。
+// $onUpdate は drizzle が UPDATE 文に自動でこの列を足してくれる仕組み（DDL は変わらない）。
+// set() に含めなくても更新されるため、各リポジトリで書き忘れる余地がない。
+export const updatedAt = timestamp({ withTimezone: true }).$onUpdate(() => new Date())
 
 export const defaultTimestamps = {
   createdAt,
@@ -188,6 +191,20 @@ export const defaultTableColumns = {
 ```
 
 > 共通カラムにするのは「全テーブルで本当に共通する項目」だけにします。book 固有の `title`/`author` は各テーブル側に書きます。
+
+**更新日時の自動更新に注意**。MySQL の `ON UPDATE CURRENT_TIMESTAMP` に相当する機能は PostgreSQL にありません。`DEFAULT now()` は INSERT でその列を省略したときだけ効くもので、UPDATE には一切関与しないため、**何も仕込まないと `updated_at` は永久に NULL のまま**です。埋める方法は2つあります。
+
+| | drizzle の `$onUpdate` | DB のトリガー |
+| --- | --- | --- |
+| 書く場所 | 共通カラム1箇所 | マイグレーション SQL に手書き |
+| 捕捉範囲 | drizzle 経由の更新のみ | psql での直接 UPDATE も含む全経路 |
+| DDL 変更 | なし | `CREATE FUNCTION` + `CREATE TRIGGER` |
+
+本書では 1 箇所で全テーブルに効く `$onUpdate` を採ります。`.set()` に含めなくても drizzle が UPDATE 文に足してくれるので、リポジトリ側で書き忘れる余地がありません。
+
+なお `$onUpdate` は**デフォルト値を持たない列については INSERT 時にも適用されます**。つまり作成時点から `updated_at` に値が入ります。本書ではこれを利用して、`updated_at` は「**常に最終更新時刻**（作成直後は `created_at` と同値）」という意味で扱います。NULL 分岐が不要になり、参照側が単純になるためです。
+
+> 逆に「NULL = 一度も更新されていない」という意味で使いたい場合は、`createInsertSchema` の結果に `updatedAt: null` を明示して INSERT 時の自動適用を打ち消します。どちらの意味なのかはテーブル全体で統一しておかないと、参照側で必ず混乱します。
 
 ## 6. テーブル設定の型 `model/generic/generic.ts`
 
