@@ -1,3 +1,4 @@
+import { toCalendarDate } from '@core/core'
 import type { EntityData, ListData } from '@domain/model/generic/repositoryData'
 import type { GetLoan, SaveLoan } from '@domain/model/loan/loan'
 import { getLoanSchema, loanSaveOperations, resolveLoanStatus } from '@domain/model/loan/loan'
@@ -30,7 +31,8 @@ const loanRepository: ILoanRepository = {
       .innerJoin(bookTable, eq(loanTable.bookId, bookTable.id))
       .innerJoin(memberTable, eq(loanTable.memberId, memberTable.id))
 
-    const today = new Date()
+    // 現在時刻は暦日に正規化して渡す（期限当日を延滞と誤判定しないため）
+    const today = toCalendarDate(new Date())
     // 取得した行を集約レスポンス型に組み立てる（ステータスはドメイン関数で算出）
     const value = rows.map((row) => {
       const loan = getLoanSchema.parse({
