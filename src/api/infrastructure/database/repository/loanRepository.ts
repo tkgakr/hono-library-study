@@ -19,8 +19,6 @@ const loanRepository: ILoanRepository = {
     const rows = await db
       .select({
         id: loanTable.id,
-        bookId: loanTable.bookId,
-        memberId: loanTable.memberId,
         bookTitle: bookTable.title,
         memberName: memberTable.name,
         loanedOn: loanTable.loanedOn,
@@ -33,26 +31,8 @@ const loanRepository: ILoanRepository = {
 
     // 現在時刻は暦日に正規化して渡す（期限当日を延滞と誤判定しないため）
     const today = toCalendarDate(new Date())
-    // 取得した行を集約レスポンス型に組み立てる（ステータスはドメイン関数で算出）
-    const value = rows.map((row) => {
-      const loan = getLoanSchema.parse({
-        id: row.id,
-        bookId: row.bookId,
-        memberId: row.memberId,
-        loanedOn: row.loanedOn,
-        dueOn: row.dueOn,
-        returnedOn: row.returnedOn,
-      })
-      return loanListItemSchema.parse({
-        id: row.id,
-        bookTitle: row.bookTitle,
-        memberName: row.memberName,
-        loanedOn: row.loanedOn,
-        dueOn: row.dueOn,
-        returnedOn: row.returnedOn,
-        status: resolveLoanStatus(loan, today),
-      })
-    })
+    // 取得した行に、ドメイン関数で算出したステータスを足して集約レスポンス型にする
+    const value = rows.map((row) => loanListItemSchema.parse({ ...row, status: resolveLoanStatus(row, today) }))
     return { value, total: value.length }
   },
 

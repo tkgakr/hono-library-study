@@ -72,10 +72,15 @@ export const returnLoan = (id: string, returnedOn: Date): ReturnedLoan =>
 export type SaveLoan = CreatedLoan | ReturnedLoan
 
 // (3) ステータス算出：保存値（日付）からドメインのルールで導く純粋関数
+// ステータス判定に必要なのは2つの日付だけ。GetLoan 全体を要求すると、
+// 一覧の join 行のように id/bookId/memberId を持たない呼び出し側が値を捏造することになるため、
+// 引数は「必要な入力」だけに絞る。
+export type LoanStatusSource = Pick<GetLoan, 'dueOn' | 'returnedOn'>
+
 // 延滞は「返却期限を過ぎている」＝ 期限当日は延滞ではない、という日単位の判定。
 // そのため today には時刻を含まない暦日（`toCalendarDate()` で正規化した値）を渡すこと。
 // 時刻付きの `new Date()` をそのまま渡すと、期限当日の 0 時を過ぎた時点で延滞と誤判定される。
-export const resolveLoanStatus = (loan: GetLoan, today: Date): LoanStatus => {
+export const resolveLoanStatus = (loan: LoanStatusSource, today: Date): LoanStatus => {
   if (loan.returnedOn !== null) return loanStatuses.RETURNED
   return loan.dueOn.getTime() < today.getTime() ? loanStatuses.OVERDUE : loanStatuses.ON_LOAN
 }
