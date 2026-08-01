@@ -1,4 +1,4 @@
-import { toCalendarDate } from '@core/core'
+import { assertNever, toCalendarDate } from '@core/core'
 import type { EntityData, ListData } from '@domain/model/generic/repositoryData'
 import type { GetLoan, SaveLoan } from '@domain/model/loan/loan'
 import { getLoanSchema, loanSaveOperations, resolveLoanStatus } from '@domain/model/loan/loan'
@@ -44,18 +44,24 @@ const loanRepository: ILoanRepository = {
 
   save: async (command: SaveLoan): Promise<boolean> => {
     return await executeTransaction(async (trx) => {
-      if (command.operation === loanSaveOperations.CREATE) {
-        const result = await trx.insert(loanTable).values(createLoanParsedSchema.insertSchema(command)).returning()
-        return result.length > 0
+      // 操作ごとに文を切り替える。operation が増えたら default で型エラーになる
+      switch (command.operation) {
+        case loanSaveOperations.CREATE: {
+          const result = await trx.insert(loanTable).values(createLoanParsedSchema.insertSchema(command)).returning()
+          return result.length > 0
+        }
+        case loanSaveOperations.RETURN: {
+          // 返却は未返却の行だけを対象にする（二重返却を DB 側で弾き、更新0件 = false になる）
+          const result = await trx
+            .update(loanTable)
+            .set(createLoanParsedSchema.returnSchema(command))
+            .where(and(eq(loanTable.id, command.id), isNull(loanTable.returnedOn)))
+            .returning()
+          return result.length > 0
+        }
+        default:
+          return assertNever(command)
       }
-
-      // 返却は未返却の行だけを対象にする（二重返却を DB 側で弾き、更新0件 = false になる）
-      const result = await trx
-        .update(loanTable)
-        .set(createLoanParsedSchema.returnSchema(command))
-        .where(and(eq(loanTable.id, command.id), isNull(loanTable.returnedOn)))
-        .returning()
-      return result.length > 0
     })
   },
 }
