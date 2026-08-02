@@ -1,4 +1,5 @@
-import { assertNever, toCalendarDate } from '@core/core'
+import type { CalendarDate } from '@core/core'
+import { assertNever } from '@core/core'
 import type { EntityData, ListData } from '@domain/model/generic/repositoryData'
 import type { GetLoan, SaveLoan } from '@domain/model/loan/loan'
 import { getLoanSchema, loanSaveOperations, resolveLoanStatus } from '@domain/model/loan/loan'
@@ -13,7 +14,7 @@ import { executeTransaction } from '@infrastructure/database/repository/genericR
 import { and, eq, isNull } from 'drizzle-orm'
 
 const loanRepository: ILoanRepository = {
-  fetchListWithRelations: async (): Promise<ListData<LoanListItem>> => {
+  fetchListWithRelations: async (today: CalendarDate): Promise<ListData<LoanListItem>> => {
     const db = getDbInstance()
     // join して必要なカラムだけ取得（DTO 投影）
     const rows = await db
@@ -29,8 +30,6 @@ const loanRepository: ILoanRepository = {
       .innerJoin(bookTable, eq(loanTable.bookId, bookTable.id))
       .innerJoin(memberTable, eq(loanTable.memberId, memberTable.id))
 
-    // 現在時刻は暦日に正規化して渡す（期限当日を延滞と誤判定しないため）
-    const today = toCalendarDate(new Date())
     // 取得した行に、ドメイン関数で算出したステータスを足して集約レスポンス型にする
     const value = rows.map((row) => loanListItemSchema.parse({ ...row, status: resolveLoanStatus(row, today) }))
     return { value, total: value.length }

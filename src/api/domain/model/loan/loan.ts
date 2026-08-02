@@ -1,3 +1,4 @@
+import type { CalendarDate } from '@core/core'
 import z from 'zod'
 
 export const loanSaveOperations = {
@@ -78,9 +79,9 @@ export type SaveLoan = CreatedLoan | ReturnedLoan
 export type LoanStatusSource = Pick<GetLoan, 'dueOn' | 'returnedOn'>
 
 // 延滞は「返却期限を過ぎている」＝ 期限当日は延滞ではない、という日単位の判定。
-// そのため today には時刻を含まない暦日（`toCalendarDate()` で正規化した値）を渡すこと。
-// 時刻付きの `new Date()` をそのまま渡すと、期限当日の 0 時を過ぎた時点で延滞と誤判定される。
-export const resolveLoanStatus = (loan: LoanStatusSource, today: Date): LoanStatus => {
+// today を CalendarDate で受けることで、時刻付きの `new Date()` をそのまま渡して
+// 期限当日を延滞と誤判定する事故を型で防ぐ。現在時刻をどこで読むかは呼び出し側の責務。
+export const resolveLoanStatus = (loan: LoanStatusSource, today: CalendarDate): LoanStatus => {
   if (loan.returnedOn !== null) return loanStatuses.RETURNED
   return loan.dueOn.getTime() < today.getTime() ? loanStatuses.OVERDUE : loanStatuses.ON_LOAN
 }
