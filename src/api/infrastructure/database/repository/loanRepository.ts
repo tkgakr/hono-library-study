@@ -5,19 +5,31 @@ import type { GetLoan, SaveLoan } from '@domain/model/loan/loan'
 import { getLoanSchema, loanSaveOperations, resolveLoanStatus } from '@domain/model/loan/loan'
 import type { LoanListItem } from '@domain/model/loan/loanListItem'
 import { loanListItemSchema } from '@domain/model/loan/loanListItem'
+import type {
+  ValidatedGetListLoanParameters,
+  ValidatedGetListLoanSearchConditions,
+} from '@domain/model/loan/loanSearchConditions'
 import type { ILoanRepository } from '@domain/repository/loan/loanRepository'
 import { getDbInstance } from '@infrastructure/database/dbAccess'
 import bookTable from '@infrastructure/database/model/book/book'
-import loanTable, { createLoanParsedSchema, loanDTOSchema } from '@infrastructure/database/model/loan/loan'
+import loanTable, {
+  createLoanParsedSchema,
+  loanDTOSchema,
+  sortablePgColumnMap,
+} from '@infrastructure/database/model/loan/loan'
 import memberTable from '@infrastructure/database/model/member/member'
-import { executeTransaction } from '@infrastructure/database/repository/genericRepository'
-import { and, eq, isNull } from 'drizzle-orm'
+import { addLimitOffset, addOrderBy, executeTransaction } from '@infrastructure/database/repository/genericRepository'
+import type { SQL } from 'drizzle-orm'
+import { and, count, eq, isNull } from 'drizzle-orm'
 
 const loanRepository: ILoanRepository = {
-  fetchListWithRelations: async (today: CalendarDate): Promise<ListData<LoanListItem>> => {
+  fetchListWithRelations: async (
+    today: CalendarDate,
+    searchConditions: ValidatedGetListLoanSearchConditions,
+  ): Promise<ListData<LoanListItem>> => {
     const db = getDbInstance()
     // join して必要なカラムだけ取得（DTO 投影）
-    const rows = await db
+    let baseQuery = db
       .select({
         id: loanTable.id,
         bookTitle: bookTable.title,
@@ -29,10 +41,24 @@ const loanRepository: ILoanRepository = {
       .from(loanTable)
       .innerJoin(bookTable, eq(loanTable.bookId, bookTable.id))
       .innerJoin(memberTable, eq(loanTable.memberId, memberTable.id))
+      .where(buildGetListWhereConditions(searchConditions.parameters))
+      .$dynamic()
+    baseQuery = addOrderBy(baseQuery, searchConditions.sort, sortablePgColumnMap)
+    baseQuery = addLimitOffset(baseQuery, searchConditions.paging)
+    const rows = await baseQuery
+
+    // total は絞り込み後の全件数。ページングを外した同じ条件で数える（join も同じに揃える）
+    const countDto = await db
+      .select({ count: count(loanTable.id) })
+      .from(loanTable)
+      .innerJoin(bookTable, eq(loanTable.bookId, bookTable.id))
+      .innerJoin(memberTable, eq(loanTable.memberId, memberTable.id))
+      .where(buildGetListWhereConditions(searchConditions.parameters))
+    const total = countDto[0]?.count ?? 0
 
     // 取得した行に、ドメイン関数で算出したステータスを足して集約レスポンス型にする
     const value = rows.map((row) => loanListItemSchema.parse({ ...row, status: resolveLoanStatus(row, today) }))
-    return { value, total: value.length }
+    return { value, total }
   },
 
   fetchDetail: async (id: string): Promise<EntityData<GetLoan>> => {
@@ -63,6 +89,15 @@ const loanRepository: ILoanRepository = {
       }
     })
   },
+}
+
+// 一覧の where 句を、指定されたパラメータだけから動的に組み立てる
+const buildGetListWhereConditions = (parameters?: ValidatedGetListLoanParameters): SQL | undefined => {
+  if (!parameters) return undefined
+  const filters: SQL[] = []
+  if (parameters.bookId) filters.push(eq(loanTable.bookId, parameters.bookId))
+  if (parameters.memberId) filters.push(eq(loanTable.memberId, parameters.memberId))
+  return filters.length > 0 ? and(...filters) : undefined
 }
 
 export default loanRepository

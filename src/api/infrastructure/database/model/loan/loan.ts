@@ -1,6 +1,7 @@
 import type { CreatedLoan, ReturnedLoan } from '@domain/model/loan/loan'
 import { defaultTimestamps, primaryId } from '@infrastructure/database/model/generic/commonColumns'
 import type { DatabaseTableConfig } from '@infrastructure/database/model/generic/generic'
+import type { SortablePgColumnMap } from '@infrastructure/database/repository/genericRepository'
 import { date, pgTable, uuid } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 
@@ -30,6 +31,14 @@ export const loanDTOSchema = {
   loanedOn: loanTable.loanedOn,
   dueOn: loanTable.dueOn,
   returnedOn: loanTable.returnedOn,
+} as const
+
+// ソート可能カラム（クエリのカラム名 → 実カラム）
+export const sortablePgColumnMap: SortablePgColumnMap = {
+  loaned_on: loanTable.loanedOn,
+  due_on: loanTable.dueOn,
+  returned_on: loanTable.returnedOn,
+  created_at: loanTable.createdAt,
 } as const
 
 // 操作ごとに insert / update のペイロードを drizzle-zod で parse する
