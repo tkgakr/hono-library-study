@@ -29,6 +29,7 @@ const loanRepository: ILoanRepository = {
   ): Promise<ListData<LoanListItem>> => {
     const db = getDbInstance()
     // join して必要なカラムだけ取得（DTO 投影）
+    // innerJoin で貸出行を落とさないことは、loan テーブルの外部キー制約が保証している
     let baseQuery = db
       .select({
         id: loanTable.id,

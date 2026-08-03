@@ -1,6 +1,8 @@
 import type { CreatedLoan, ReturnedLoan } from '@domain/model/loan/loan'
+import bookTable from '@infrastructure/database/model/book/book'
 import { defaultTimestamps, primaryId } from '@infrastructure/database/model/generic/commonColumns'
 import type { DatabaseTableConfig } from '@infrastructure/database/model/generic/generic'
+import memberTable from '@infrastructure/database/model/member/member'
 import type { SortablePgColumnMap } from '@infrastructure/database/repository/genericRepository'
 import { date, pgTable, uuid } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
@@ -8,8 +10,14 @@ import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 const columns = {
   ...defaultTimestamps,
   id: primaryId,
-  bookId: uuid().notNull(),
-  memberId: uuid().notNull(),
+  // 外部キー制約を付けて、参照先の無い貸出（孤立行）が生まれないことを DB に保証させる。
+  // これがないと、蔵書や利用者を物理削除したときに innerJoin で貸出行そのものが一覧から消える。
+  bookId: uuid()
+    .notNull()
+    .references(() => bookTable.id),
+  memberId: uuid()
+    .notNull()
+    .references(() => memberTable.id),
   loanedOn: date({ mode: 'date' }).notNull(),
   dueOn: date({ mode: 'date' }).notNull(),
   returnedOn: date({ mode: 'date' }), // nullable
