@@ -37,6 +37,14 @@ export const APIResultValue: Record<ResultCode, ResponseMessageDefinition> = {
   [ResultCodes.MEMBER_FETCH_FAILED]: { message: () => '利用者の取得に失敗しました', httpStatusCode: 500 },
   [ResultCodes.MEMBER_SAVE_FAILED]: { message: () => '利用者の保存に失敗しました', httpStatusCode: 500 },
   [ResultCodes.MEMBER_DUPLICATE_CHECK_FAILED]: { message: () => '利用者の取得に失敗しました', httpStatusCode: 500 },
+  [ResultCodes.LOAN_NOT_FOUND]: { message: () => '指定された貸出は存在しません', httpStatusCode: 404 },
+  [ResultCodes.LOAN_INVALID_STATE]: {
+    message: (a) => `${a?.operation}可能な貸出がありません`,
+    httpStatusCode: 404,
+  },
+  [ResultCodes.LOAN_LIST_FAILED]: { message: () => '貸出の一覧取得に失敗しました', httpStatusCode: 500 },
+  [ResultCodes.LOAN_FETCH_FAILED]: { message: () => '貸出の取得に失敗しました', httpStatusCode: 500 },
+  [ResultCodes.LOAN_SAVE_FAILED]: { message: () => '貸出の保存に失敗しました', httpStatusCode: 500 },
   [ResultCodes.INTERNAL_ERROR]: { message: () => '内部エラーが発生しました', httpStatusCode: 500 },
 }
 
