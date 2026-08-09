@@ -39,3 +39,16 @@ describe('GetBook のテスト', () => {
     }
   })
 })
+
+describe('createBook のテスト', () => {
+  test('正常時に operation:create と採番された id を持つこと', () => {
+    const validated = validatedCreateBookSchema.parse({ title: '坊っちゃん', author: '夏目漱石' })
+    const created = createBook(validated)
+    expect(created).toMatchObject({
+      operation: 'create',
+      id: expect.any(String),
+      title: '坊っちゃん',
+      author: '夏目漱石',
+    })
+  })
+})
