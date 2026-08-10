@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import {
   createBook,
   getBookSchema,
+  updateBook,
   validatedCreateBookSchema,
   validatedUpdateBookSchema,
 } from '@domain/model/book/book'
@@ -46,6 +47,27 @@ describe('createBook のテスト', () => {
 })
 
 describe('updateBook のテスト', () => {
+  test('正常時に operation:update と渡した id を持つこと', () => {
+    const id = generateImitationUuid()
+    const validated = validatedUpdateBookSchema.parse({ title: '草枕', author: '夏目漱石' })
+    const updated = updateBook(id, validated)
+    expect(updated).toMatchObject({
+      operation: 'update',
+      id,
+      title: '草枕',
+      author: '夏目漱石',
+    })
+  })
+
+  test.each<{ caseName: string; input: { title?: string; author?: string } }>([
+    { caseName: 'title のみ指定', input: { title: '三四郎' } },
+    { caseName: 'author のみ指定', input: { author: '森鴎外' } },
+  ])('$caseName の場合も更新コマンドが作られること', ({ input }) => {
+    const id = generateImitationUuid()
+    const updated = updateBook(id, validatedUpdateBookSchema.parse(input))
+    expect(updated).toMatchObject({ operation: 'update', id, ...input })
+  })
+
   test('title も author も無いとカスタムエラーになること', () => {
     const result = validatedUpdateBookSchema.safeParse({})
     expect(result.success).toBe(false)
