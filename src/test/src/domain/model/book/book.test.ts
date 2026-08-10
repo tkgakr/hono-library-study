@@ -9,14 +9,6 @@ import { getZodErrorPathStrings } from '@infrastructure/middleware/errorHandler'
 import { generateImitationUuid } from '@test/fixtures/utils/dataGenerator'
 import z from 'zod'
 
-describe('validatedUpdateBookSchema', () => {
-  test('title と author の両方が未指定の場合は検証に失敗する', () => {
-    const result = validatedUpdateBookSchema.safeParse({})
-
-    expect(result.success).toBe(false)
-  })
-})
-
 const successGetInput = { id: generateImitationUuid(), title: '吾輩は猫である', author: '夏目漱石', isActive: true }
 
 describe('GetBook のテスト', () => {
@@ -53,7 +45,7 @@ describe('createBook のテスト', () => {
   })
 })
 
-describe('updateBook の refine', () => {
+describe('updateBook のテスト', () => {
   test('title も author も無いとカスタムエラーになること', () => {
     const result = validatedUpdateBookSchema.safeParse({})
     expect(result.success).toBe(false)
