@@ -52,3 +52,14 @@ describe('createBook のテスト', () => {
     })
   })
 })
+
+describe('updateBook の refine', () => {
+  test('title も author も無いとカスタムエラーになること', () => {
+    const result = validatedUpdateBookSchema.safeParse({})
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues.at(0)?.code).toBe('custom')
+      expect(result.error.issues.at(0)?.message).toBe('title または author のどちらかを指定してください')
+    }
+  })
+})
