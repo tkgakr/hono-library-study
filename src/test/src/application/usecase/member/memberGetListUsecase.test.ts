@@ -18,7 +18,7 @@ const rpCase: Record<string, IMemberRepository> = {
 }
 
 const searchConditions = validatedGetListMemberSearchConditionsSchema.parse({
-  parameters: { searchFilter: '夏目', isActive: true },
+  parameters: { searchFilter: '山田', isActive: true },
   paging: { limit: 10, offset: 0 },
   sort: { orderBy: [{ column: 'name', order: 'asc' }] },
 })

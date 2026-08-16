@@ -32,7 +32,7 @@ describe('memberCreateUsecase のテスト', () => {
     { caseName: '例外', expected: { success: false, code: ResultCodes.MEMBER_SAVE_FAILED } },
   ])('$caseName の場合に $expected.success となること', async ({ caseName, expected }) => {
     const repository = rpCase[caseName] ?? mockMemberRepository
-    const validatedEntity = validatedCreateMemberSchema.parse({ name: '夏目漱石', email: 'soseki@example.com' })
+    const validatedEntity = validatedCreateMemberSchema.parse({ name: '鈴木花子', email: 'hanako.suzuki@example.com' })
     const result = await memberCreateUsecase(repository, mockLogger, validatedEntity)
 
     expect(result.isOk()).toBe(expected.success)

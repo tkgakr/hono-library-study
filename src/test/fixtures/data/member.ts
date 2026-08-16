@@ -7,8 +7,8 @@ export { mockLogger } from './book'
 // 実スキーマで parse して作る → フィクスチャが必ずスキーマ妥当
 export const mockGetMember = getMemberSchema.parse({
   id: '550e8400-e29b-41d4-a716-446655440001',
-  name: '夏目漱石',
-  email: 'soseki@example.com',
+  name: '山田太郎',
+  email: 'taro.yamada@example.com',
   isActive: true,
 })
 
