@@ -34,6 +34,8 @@ export const isEmptyArray = <T>(value: T[]): boolean => value.length === 0
 export const isEmptyOrWhitespaceString = (value: string): boolean => value.trim().length === 0
 ```
 
+> リポジトリの `core.ts` にはこの2つに加えて `assertNever` と `toCalendarDate` / `CalendarDate` が入っています。どちらも09章（貸出）で必要になったときに足すものなので、本章では2つだけで構いません。
+
 ---
 
 ## 2. ログの抽象と実装

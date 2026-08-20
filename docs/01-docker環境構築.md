@@ -36,6 +36,7 @@ hono-library-study/
 ├─ docker-compose.yml
 ├─ Dockerfile.local
 ├─ .env
+├─ .env.template
 ├─ .gitignore
 ├─ package.json
 ├─ tsconfig.json
@@ -142,18 +143,18 @@ TypeScript 用（型解決）と Bun 用（実行・ビルド時解決）の **�
 
 ```json
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.12/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.1/schema.json",
   "files": { "includes": ["src/**/*.ts"] },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
     "indentWidth": 2,
-    "lineWidth": 150
+    "lineWidth": 120
   },
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "correctness": {
         "noUnusedImports": "error",
         "noUnusedVariables": "error"
@@ -175,11 +176,12 @@ TypeScript 用（型解決）と Bun 用（実行・ビルド時解決）の **�
 
 ---
 
-## 5. .env と .gitignore
+## 5. .env / .env.template と .gitignore
 
 `DATABASE_URL` のホスト名は compose のサービス名 `pgdb` を指します。
+リポジトリには `.env.template` を置き、`.env` は git 管理外にします（`cp .env.template .env` で作成）。
 
-### .env
+### .env（= .env.template の内容）
 
 ```sh
 DATABASE_URL=postgres://postgres:postgres@pgdb:5432/library
@@ -196,7 +198,7 @@ dist
 .env
 ```
 
-> 学習用なので `.env` をそのまま置いていますが、実務では `.env.template` を別に用意し、`.env` は git 管理外にするのが定石です。
+> `.env` を git 管理外にし、雛形だけを `.env.template` としてコミットするのが定石です。本教材もその形にしてあります。
 
 ---
 
@@ -291,7 +293,7 @@ export default defineConfig({
   schema: './src/api/infrastructure/database/model/**/*.ts',
   dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.DATABASE_URL as string,
+    url: Bun.env.DATABASE_URL as string,
   },
   casing: 'snake_case',
 })

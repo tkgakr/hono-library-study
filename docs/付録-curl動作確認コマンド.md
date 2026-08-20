@@ -107,7 +107,7 @@ curl -s -X POST "$BASE/books" -H 'Content-Type: application/json' \
 curl -s -X POST "$BASE/books" -H 'Content-Type: application/json' \
   -d '{"title":"重複本","author":"著者"}' | jq
 
-# ⑤ 有効な蔵書をさらに復元 → 400 / W0102（状態不正）
+# ⑤ 有効な蔵書をさらに復元 → 404 / W0102（状態不正）
 curl -s -X PUT "$BASE/books/activate/$BOOK_ID" | jq
 ```
 
@@ -208,10 +208,10 @@ curl -s -X POST "$BASE/members" -H 'Content-Type: application/json' \
 curl -s -X POST "$BASE/members" -H 'Content-Type: application/json' \
   -d '{"name":"別ユーザー","email":"dup@example.com"}' | jq
 
-# ⑥ 有効な利用者をさらに復元 → 400 / W0202（状態不正）
+# ⑥ 有効な利用者をさらに復元 → 404 / W0202（状態不正）
 curl -s -X PUT "$BASE/members/activate/$MEMBER_ID" | jq
 
-# ⑦ 無効化済みの利用者を更新 → 400 / W0202
+# ⑦ 無効化済みの利用者を更新 → 404 / W0202
 curl -s -X DELETE "$BASE/members/$MEMBER_ID" >/dev/null
 curl -s -X PUT "$BASE/members/$MEMBER_ID" \
   -H 'Content-Type: application/json' -d '{"name":"更新できない"}' | jq
@@ -273,10 +273,10 @@ smoke GET    /members/00000000-0000-0000-0000-000000000000    # W0201 期待
 | `W9900` | 400 | リクエストフォーマットエラー | infrastructure |
 | `W9901` | 400 | バリデーションエラー | `defaultHook` / `globalErrorHandler` |
 | `W0101` | 404 | 蔵書が存在しない | `bookGet*/Update/Inactivate` usecase |
-| `W0102` | 400 | 蔵書が操作可能な状態でない | `bookActivateUsecase` など |
+| `W0102` | 404 | 蔵書が操作可能な状態でない | `bookActivateUsecase` など |
 | `W0103` | 400 | 同名の蔵書が既に存在する | `checkBookTitleExists` |
 | `W0201` | 404 | 利用者が存在しない | `memberGet*/Update/Inactivate` usecase |
-| `W0202` | 400 | 利用者が操作可能な状態でない | `memberUpdate/ActivateUsecase` |
+| `W0202` | 404 | 利用者が操作可能な状態でない | `memberUpdate/ActivateUsecase` |
 | `W0203` | 400 | 同じ email の利用者が既に存在する | `checkMemberEmailExists` |
 | `E01xx` / `E02xx` | 500 | book / member のシステムエラー | repository 例外 |
 | `E9999` | 500 | 内部エラー | `globalErrorHandler` |

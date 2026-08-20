@@ -88,6 +88,8 @@ export const setResponse = <T>(context: Context, operationResult: OperationResul
 }
 ```
 
+> 上記は book のコードだけを載せた07章時点の姿です。`APIResultValue` は `Record<ResultCode, ...>` なので、09章で `MEMBER_*` / `LOAN_*` を `ResultCodes` に足した瞬間、この表に追記しないと**コンパイルエラーになります**（網羅を型で強制している）。リポジトリの `response.ts` には member / loan の分も入っています。
+
 > 実務では `code` を `pathCode-methodCode-resultCode`（例 `01-03-I0000`）のような複合コードにすることがあります。本教材は単純化して `resultCode` だけにしています（複合コードの仕組みは11章で補足）。
 
 ---
@@ -336,7 +338,10 @@ export const idRequestParams = z.object({
 })
 
 // 各ルートが spread して使う、共通のエラーレスポンス定義
-export const genericResponse: Pick<RouteConfig['responses'], HTTPStatusCode> = {
+// 200 は各ルートが自前で定義するので、共通定義の対象からは外す
+type GenericErrorStatusCode = Exclude<HTTPStatusCode, typeof httpStatusCodes.OK>
+
+export const genericResponse: Pick<RouteConfig['responses'], GenericErrorStatusCode> = {
   [httpStatusCodes.BAD_REQUEST]: {
     content: { 'application/json': { schema: apiStatusSchema, example: { apiStatus: { code: 'W9901', message: 'パラメータが不正です' } } } },
     description: 'リクエストエラー(Bad Request)',
@@ -531,14 +536,16 @@ export const apiRouter = createOpenApiHono()
 apiRouter.route('/books', bookRoute)
 ```
 
+> 09章で利用者(member)を足すと、ここに `apiRouter.route('/members', memberRoute)` が1行増えます。ルーターを1本作って1行マウントするだけで機能が足せる形です。
+
 ## 9. エントリポイント差し替え `serverIndex.ts`
 
-01章で作った最小版を、本実装に差し替えます。
+01章で作った最小版に、ルート集約とエラーハンドラを足します（`/health` はそのまま残します）。
 
 ```ts
 // src/api/serverIndex.ts
 import { swaggerUI } from '@hono/swagger-ui'
-import { OpenAPIHono } from '@hono/zod-openapi'
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
 import { loadEnv } from '@infrastructure/config/env'
 import { getDbInstance } from '@infrastructure/database/dbAccess'
 import { textLogger } from '@infrastructure/logger/logger'
@@ -550,6 +557,24 @@ const appConfig = loadEnv()
 getDbInstance() // 起動時に接続を初期化
 
 const app = new OpenAPIHono()
+
+// --- ヘルスチェック（01章のまま）---
+const healthRoute = createRoute({
+  method: 'get',
+  path: '/health',
+  responses: {
+    200: {
+      description: 'OK',
+      content: {
+        'application/json': {
+          schema: z.object({ status: z.literal('ok') }),
+        },
+      },
+    },
+  },
+})
+
+app.openapi(healthRoute, (c) => c.json({ status: 'ok' as const }))
 
 app.route('/', apiRouter)
 
