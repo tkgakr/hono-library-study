@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 import {
+  activateBook,
   createBook,
   getBookSchema,
+  inactivateBook,
   updateBook,
   validatedCreateBookSchema,
   validatedUpdateBookSchema,
@@ -64,5 +66,27 @@ describe('updateBook のテスト', () => {
       expect(result.error.issues.at(0)?.code).toBe('custom')
       expect(result.error.issues.at(0)?.message).toBe('title または author のどちらかを指定してください')
     }
+  })
+})
+
+describe('inactivateBook のテスト', () => {
+  test('正常時に operation:inactivate と isActive:false を持つこと', () => {
+    const id = generateImitationUuid()
+    expect(inactivateBook(id)).toMatchObject({ operation: 'inactivate', id, isActive: false })
+  })
+
+  test('id が UUID 形式以外の場合に例外になること', () => {
+    expect(() => inactivateBook('invalid')).toThrow(z.ZodError)
+  })
+})
+
+describe('activateBook のテスト', () => {
+  test('正常時に operation:activate と isActive:true を持つこと', () => {
+    const id = generateImitationUuid()
+    expect(activateBook(id)).toMatchObject({ operation: 'activate', id, isActive: true })
+  })
+
+  test('id が UUID 形式以外の場合に例外になること', () => {
+    expect(() => activateBook('invalid')).toThrow(z.ZodError)
   })
 })
