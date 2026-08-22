@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 import {
+  activateMember,
   createMember,
   getMemberSchema,
+  inactivateMember,
   updateMember,
   validatedCreateMemberSchema,
   validatedUpdateMemberSchema,
@@ -75,5 +77,27 @@ describe('updateMember のテスト', () => {
       expect(result.error.issues.at(0)?.code).toBe('custom')
       expect(result.error.issues.at(0)?.message).toBe('name または email のどちらかを指定してください')
     }
+  })
+})
+
+describe('inactivateMember のテスト', () => {
+  test('正常時に operation:inactivate と isActive:false を持つこと', () => {
+    const id = generateImitationUuid()
+    expect(inactivateMember(id)).toMatchObject({ operation: 'inactivate', id, isActive: false })
+  })
+
+  test('id が UUID 形式以外の場合に例外になること', () => {
+    expect(() => inactivateMember('invalid')).toThrow(z.ZodError)
+  })
+})
+
+describe('activateMember のテスト', () => {
+  test('正常時に operation:activate と isActive:true を持つこと', () => {
+    const id = generateImitationUuid()
+    expect(activateMember(id)).toMatchObject({ operation: 'activate', id, isActive: true })
+  })
+
+  test('id が UUID 形式以外の場合に例外になること', () => {
+    expect(() => activateMember('invalid')).toThrow(z.ZodError)
   })
 })
